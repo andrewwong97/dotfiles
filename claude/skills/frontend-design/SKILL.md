@@ -36,14 +36,16 @@ NEVER use generic AI-generated aesthetics: overused font families (Inter, Roboto
 
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations. Minimalist designs need restraint, precision, and careful attention to spacing and subtle details.
 
-## Project Design Philosophy
+## Formhause Design Philosophy
 
-Apply the above while preserving the project's existing theming. Keep any shadcn components or existing styles. Changes should be **subtly powerful** — don't drastically alter the current look unless explicitly prompted. Spacing should be pleasant.
+Apply the above while preserving the existing Formhause theming. Keep any shadcn components or existing styles. Changes should be **subtly powerful** — don't drastically alter the current look unless explicitly prompted. Spacing should be pleasant.
 
 ## Code Generation Guidelines
 
 - Some users may be on older browsers — include fallbacks where needed.
 - The application uses light and dark mode with `dark:` Tailwind classes — account for both in any generated styles.
+- **Depth cues differ by mode**: In light mode, use shadows (box-shadow, drop-shadow) to convey elevation and distance. In dark mode, shadows are invisible against dark backgrounds — instead use lighter surface colors to bring elements forward and darker colors to push them back. A card in light mode might use `shadow-md`; the same card in dark mode should use a lighter background (e.g. `dark:bg-zinc-800`) against a darker page (e.g. `dark:bg-zinc-950`) to achieve the same visual separation. **Shadows should be subtle** — they convey depth, not draw attention. Prefer `shadow-sm` or `shadow-md` over `shadow-lg`/`shadow-xl`. If a shadow is the first thing a user notices, it's too heavy.
+- **Avoid semantic color defaults** — never use generic CSS variable classes like `bg-card`, `bg-background`, `bg-muted`, or `text-foreground` for new UI. These resolve to bland defaults that lack visual intention. Instead, use explicit zinc scale values (e.g. `bg-zinc-50`, `dark:bg-zinc-800`) to control exactly how surfaces look in both modes. Semantic classes are fine for existing shadcn components (Button, Card, etc.) but when building custom layouts and sections, pick specific shades from the zinc palette for precise control.
 - Avoid overly complicated animations.
 
 Remember: Claude is capable of extraordinary creative work. Don't hold back — show what can truly be created when committing fully to a distinctive vision.
