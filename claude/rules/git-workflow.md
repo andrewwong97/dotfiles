@@ -25,21 +25,6 @@ Branch names must be descriptive of the work being done. If you are working in a
 git branch -m <old-name> <type>/<descriptive-name>
 ```
 
-## Beads-Driven Workflow
-
-When work is tracked via beads (`bd`), **each beads task gets its own branch and PR**. The full lifecycle for a single task:
-
-1. `bd ready` — find the next unblocked task.
-2. `bd update <id> --status=in_progress` — claim it.
-3. `git checkout master && git pull` — start from latest master.
-4. `git checkout -b <type>/<task-description>` — branch name matches the task scope.
-5. Implement, commit, run code review, push, open PR (reference the beads ID in the commit and PR body).
-6. **Do NOT close the beads task yet** — it stays `in_progress` until the PR is merged.
-7. After the PR is merged: `bd close <id> --reason "Merged in PR #N"`.
-8. `bd ready` — check what's unblocked next.
-
-Each PR should be independently mergeable. If tasks have dependencies in beads, the later branch is created off master **after** the dependency's PR is merged (or rebased by the user).
-
 ## Commit Flow
 
 The following applies to every push — whether it is the first push on a new branch or an additional commit on a branch that already has an open PR.
