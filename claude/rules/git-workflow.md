@@ -24,9 +24,9 @@ git branch -m <old-name> <type>/<descriptive-name>
 The following applies to every push — whether it is the first push on a new branch or an additional commit on a branch that already has an open PR.
 
 1. Make changes on the feature branch.
-2. **Run related tests** before committing (code changes only — docs, config, and other non-code changes skip this step). For backend changes: `cd backend && source venv/bin/activate && python -m pytest <APP>/tests/ -x -q`. For frontend changes: run the relevant test files with `pnpm test`. Fix any failures before proceeding.
+2. **Run related tests** before committing (code/env-impacting changes only — docs and other non-code changes skip this step). Fix any failures before proceeding.
 3. Stage specific files (never `git add -A` blindly).
-4. Commit with a clear message explaining the **why**.
+4. Commit with a clear message.
 5. **Before pushing**, run the `code-reviewer` agent (via the Agent tool with `subagent_type: "code-reviewer"`) against all files staged in the commit. All Critical issues surfaced by the review must be resolved before pushing. Warnings should be addressed where practical.
 6. Push with `-u` to set upstream: `git push -u origin <branch>`. See **Push Cadence** — push promptly on the *first* push, but hold off on subsequent pushes until you've consulted the user.
 
@@ -47,8 +47,6 @@ The AI must never rewrite history itself (see Prohibited Operations), so any squ
 Use `gh pr create` to open PRs. Always include:
 - A short title (under 70 characters)
 - A body with a brief summary and test plan
-
-Let CI run all non-e2e tests (unit, lint, type-check) on the PR — do not run these locally.
 
 ## Prohibited and Restricted Operations
 
