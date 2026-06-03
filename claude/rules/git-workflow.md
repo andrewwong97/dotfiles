@@ -14,31 +14,10 @@ This applies to all work — new features, bug fixes, refactors, config changes.
 
 ## Branch Naming
 
-Use kebab-case with a short prefix that matches the type of change:
-- `feat/<description>` — new feature
-- `fix/<description>` — bug fix
-- `chore/<description>` — tooling, config, deps
-- `refactor/<description>` — refactoring without behavior change
-
 Branch names must be descriptive of the work being done. If you are working in a worktree whose name is not descriptive (e.g. an auto-generated name), **rename the branch** to something meaningful before pushing:
 ```bash
 git branch -m <old-name> <type>/<descriptive-name>
 ```
-
-## Beads-Driven Workflow
-
-When work is tracked via beads (`bd`), **each beads task gets its own branch and PR**. The full lifecycle for a single task:
-
-1. `bd ready` — find the next unblocked task.
-2. `bd update <id> --status=in_progress` — claim it.
-3. `git checkout master && git pull` — start from latest master.
-4. `git checkout -b <type>/<task-description>` — branch name matches the task scope.
-5. Implement, commit, run code review, push, open PR (reference the beads ID in the commit and PR body).
-6. **Do NOT close the beads task yet** — it stays `in_progress` until the PR is merged.
-7. After the PR is merged: `bd close <id> --reason "Merged in PR #N"`.
-8. `bd ready` — check what's unblocked next.
-
-Each PR should be independently mergeable. If tasks have dependencies in beads, the later branch is created off master **after** the dependency's PR is merged (or rebased by the user).
 
 ## Commit Flow
 
@@ -49,7 +28,15 @@ The following applies to every push — whether it is the first push on a new br
 3. Stage specific files (never `git add -A` blindly).
 4. Commit with a clear message explaining the **why**.
 5. **Before pushing**, run the `code-reviewer` agent (via the Agent tool with `subagent_type: "code-reviewer"`) against all files staged in the commit. All Critical issues surfaced by the review must be resolved before pushing. Warnings should be addressed where practical.
-6. Push with `-u` to set upstream: `git push -u origin <branch>`.
+6. Push with `-u` to set upstream: `git push -u origin <branch>`. See **Push Cadence** — push promptly on the *first* push, but hold off on subsequent pushes until you've consulted the user.
+
+## Push Cadence
+
+The **first** push on a new branch should happen promptly: it triggers CI/CD and opens the PR, surfacing pipeline feedback early. Don't sit on the initial push.
+
+**After that, do not eagerly push every commit.** Let commits accumulate locally and **consult the user before each subsequent push.** This leaves a window to consolidate similar or fix-up commits — e.g. three iterations on the same file that should be one commit — before they reach the remote.
+
+The AI must never rewrite history itself (see Prohibited Operations), so any squash/rebase in that window is **performed by the user**: the AI's job is to hold off pushing, point out which commits could be squashed, and wait for direction. Consolidating *local, unpushed* commits is what keeps this safe — it needs no force-push. Once commits are pushed, squashing them would require forbidden history rewriting, which is exactly why the consolidation must happen **before** the next push.
 
 ## PR Creation
 
@@ -62,8 +49,6 @@ Use `gh pr create` to open PRs. Always include:
 - A body with a brief summary and test plan
 
 Let CI run all non-e2e tests (unit, lint, type-check) on the PR — do not run these locally.
-
-If a change touches flows covered by e2e tests (auth, dashboard, full upload flow), prompt the user to run `pnpm test:e2e` locally against their dev stack **before** pushing to the PR.
 
 ## Prohibited and Restricted Operations
 
