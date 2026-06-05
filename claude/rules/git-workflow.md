@@ -29,6 +29,7 @@ The following applies to every push — whether it is the first push on a new br
 4. Commit with a clear message.
 5. **Before pushing**, run the `code-reviewer` agent (via the Agent tool with `subagent_type: "code-reviewer"`) against all files staged in the commit. All Critical issues surfaced by the review must be resolved before pushing. Warnings should be addressed where practical.
 6. Push with `-u` to set upstream: `git push -u origin <branch>`. See **Push Cadence** — push promptly on the *first* push, but hold off on subsequent pushes until you've consulted the user.
+7. **After every push, surface the PR link in your reply** (see **PR Creation**) — even when no other summary is warranted.
 
 ## Push Cadence
 
@@ -47,6 +48,18 @@ The AI must never rewrite history itself (see Prohibited Operations), so any squ
 Use `gh pr create` to open PRs. Always include:
 - A short title (under 70 characters)
 - A body with a brief summary and test plan
+
+**Write PR descriptions for a reader without code context.** Describe behavior and user-visible impact in plain language. Avoid code references — symbol names, file paths, function/variable names, flags, internal identifiers — unless one is genuinely necessary for the reader to understand the change, and then keep it minimal. Prefer "behind a feature flag, off by default" over naming the flag; prefer "the saved-drafts list" over naming the query. The goal is a description a reviewer or stakeholder can understand without opening the diff.
+
+**Structure with lists, sometimes tables.** When describing a series of steps or a set of related points, use lists rather than prose paragraphs — ordered lists for sequential steps (where order matters), unordered lists for non-sequential points. Tables are fine when the content genuinely has columns (e.g. before/after, option/effect), but favor the simplest structure that fits — reach for a table only when a list can't capture the relationship. This keeps the description scannable.
+
+**Document new database fields (only when the change touches the database).** If the PR adds columns/fields to a table or schema, include a dedicated section with a table of the new fields — one row per field, columns for the table/model it's on, the field name, its type (and whether nullable/optional), and a plain-language description of what it stores. Omit this section entirely when the PR makes no database changes.
+
+| Table | Field | Type | Description |
+| --- | --- | --- | --- |
+| `<table>` | `<field>` | `<type>`, nullable | What it holds and why |
+
+**Always provide the PR link after every push.** Whether the push created the PR or just added commits to an existing one, end your reply with the PR URL so it's one click away. Get it from the `gh pr create` output, or `gh pr view <branch> --json url -q .url` for an existing PR. This applies to every push, not just the first.
 
 ## Prohibited and Restricted Operations
 
