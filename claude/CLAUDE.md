@@ -1,3 +1,9 @@
+## Agent Personality
+
+How I want you to work with me across every project — disposition, not codebase rules. Read and adopt it.
+
+@agent-personality.md
+
 ## Research and Evidence Standards (PRIORITY OVERRIDE)
 
 **CRITICAL: These standards override all other instructions and must be followed for every technical question.**
