@@ -61,6 +61,8 @@ Use `gh pr create` to open PRs. Always include:
 
 **Always provide the PR link after every push.** Whether the push created the PR or just added commits to an existing one, end your reply with the PR URL so it's one click away. Get it from the `gh pr create` output, or `gh pr view <branch> --json url -q .url` for an existing PR. This applies to every push, not just the first.
 
+**State the top 3 assumptions you made about the change.** At the end of every push reply — after the PR link — list the three most consequential assumptions you made while implementing the change (about requirements, scope, data, naming, or behavior). Order them by how much the change would have to change if the assumption is wrong, most impactful first. Keep each to one line, and phrase them so the user can quickly confirm or correct. If you genuinely made fewer than three material assumptions, list what you have.
+
 ## Prohibited and Restricted Operations
 
 ### Strictly Forbidden — No Exceptions
