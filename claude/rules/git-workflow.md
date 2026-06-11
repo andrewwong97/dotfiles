@@ -1,5 +1,15 @@
 # Git Workflow Rules
 
+## Ticket Pickup
+
+**Before starting work on a ticket, claim it by moving its status forward so no one else picks it up.** Do this the moment you begin — before (or alongside) creating the branch/worktree, and before writing any code. Advance the status through the full chain toward "in progress" in order (e.g. `Backlog`/`To Do` → `Planned`/`Selected` → `In Progress`), matching whatever intermediate states the project's workflow defines.
+
+- If the ticket is already partway along (e.g. already `Planned`), run only the remaining transitions needed to reach in-progress. Never move a ticket backwards.
+- Transition ids are often source-state dependent — the same target status can have a different id depending on the current status. If a transition fails or the ticket isn't in the status you expect, query the available transitions for the ticket's *current* status and transition by the returned id.
+- Also assign the ticket to yourself if it isn't already.
+
+(Project-specific status names, transition ids, and assignment conventions belong in project memory/skills, not here.)
+
 ## Branch Protection
 
 **Never push directly to `master` or `main`.** All changes must go through a feature branch and PR.
@@ -61,7 +71,52 @@ Use `gh pr create` to open PRs. Always include:
 
 **Always provide the PR link after every push.** Whether the push created the PR or just added commits to an existing one, end your reply with the PR URL so it's one click away. Get it from the `gh pr create` output, or `gh pr view <branch> --json url -q .url` for an existing PR. This applies to every push, not just the first.
 
-**State the top 3 assumptions you made about the change.** At the end of every push reply — after the PR link — list the three most consequential assumptions you made while implementing the change (about requirements, scope, data, naming, or behavior). Order them by how much the change would have to change if the assumption is wrong, most impactful first. Keep each to one line, and phrase them so the user can quickly confirm or correct. If you genuinely made fewer than three material assumptions, list what you have.
+**State the top 3 assumptions you made about the change.** List the three most consequential assumptions you made while implementing the change (about requirements, scope, data, naming, or behavior) in **both** places:
+- **In the PR description** — as a final `## Assumptions` section, so reviewers see them alongside the diff.
+- **In the push reply** — after the PR link.
+
+Order them by how much the change would have to change if the assumption is wrong, most impactful first. Keep each to one line, and phrase them so the reader can quickly confirm or correct. If you genuinely made fewer than three material assumptions, list what you have.
+
+## Merge Conflicts and Branch Sync
+
+**If the PR has merge conflicts, resolve them by merging the primary branch in — never by rebasing** (see Prohibited Operations). Detect conflicts with:
+
+```bash
+gh pr view <branch> --json mergeable,mergeStateStatus
+# mergeable: CONFLICTING (or mergeStateStatus: DIRTY) → sync needed
+```
+
+To sync:
+
+1. `git fetch origin && git merge origin/<primary>` (the PR's base branch — e.g. `develop` or `main`).
+2. Resolve the conflicts. Resolve conservatively — keep both sides' intent; if a conflict involves a substantive logic decision you can't make confidently, stop and ask the user instead of guessing.
+3. Re-run the related tests and `prek` (the merge result is new code, even if your own diff didn't change).
+4. Commit the merge and push.
+
+**Sync pushes are exempt from the consult-before-pushing cadence** — they contain no new work, only integration, and an unpushed conflict resolution blocks review. Push them promptly.
+
+**Keep syncing while the PR is open.** Whenever the base branch moves and the PR becomes conflicting again, repeat the steps above. The merge-monitoring loop (below) is the natural place to catch this: each poll should also check `mergeable` and run the sync when it reports `CONFLICTING`.
+
+## PR Merge Monitoring and Ticket Closure
+
+**After creating a new PR** (first push on a branch), start a loop to monitor for the merge and close any linked Jira ticket:
+
+1. **Identify the ticket key.** Check in order:
+   - Branch name: look for an `ONE-\d+` pattern (e.g. `bugfix/one-1758-fix-projections` → `ONE-1758`)
+   - PR title: look for an `ONE-\d+` pattern
+   - If no ticket is found, still monitor for the merge but skip ticket closure.
+
+2. **Invoke `/loop`** with a prompt that polls `gh pr view <branch> --json state,mergeable -q '{state: .state, mergeable: .mergeable}'` and acts on the result:
+   - If not `MERGED` and `mergeable` is `CONFLICTING`: run the sync procedure from **Merge Conflicts and Branch Sync** (merge the base branch in, resolve, test, push), then continue looping.
+   - If not `MERGED`: continue looping (5-minute interval is appropriate — human review takes time).
+   - If `MERGED`:
+     - If a ticket was identified, close it:
+       1. Call `transitionJiraIssue` with the Done transition (transition id `161` for the ONE project; cloudId `fd67803a-3849-4a2f-8626-b6e0b198a754`).
+       2. Call `editJiraIssue` to set `resolution: { name: "Done" }` — **separate call required**; the Done transition has no field screen.
+     - Report the merge (and ticket closure if applicable) to the user.
+     - Stop the loop (omit the `ScheduleWakeup` call).
+
+3. **Do not start a second loop** on subsequent pushes to the same branch — one loop per PR is enough.
 
 ## Prohibited and Restricted Operations
 
