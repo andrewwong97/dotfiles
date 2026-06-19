@@ -102,21 +102,21 @@ To sync:
 **After creating a new PR** (first push on a branch), start a loop to monitor for the merge and close any linked Jira ticket:
 
 1. **Identify the ticket key.** Check in order:
-   - Branch name: look for an `ONE-\d+` pattern (e.g. `bugfix/one-1758-fix-projections` → `ONE-1758`)
-   - PR title: look for an `ONE-\d+` pattern
+   - Branch name: look for the project's ticket-key pattern (e.g. `bugfix/abc-1758-fix-projections` → `ABC-1758`)
+   - PR title: look for the same pattern
    - If no ticket is found, still monitor for the merge but skip ticket closure.
 
 2. **Invoke `/loop`** with a prompt that polls `gh pr view <branch> --json state,mergeable -q '{state: .state, mergeable: .mergeable}'` and acts on the result:
    - If not `MERGED` and `mergeable` is `CONFLICTING`: run the sync procedure from **Merge Conflicts and Branch Sync** (merge the base branch in, resolve, test, push), then continue looping.
    - If not `MERGED`: continue looping (5-minute interval is appropriate — human review takes time).
    - If `MERGED`:
-     - If a ticket was identified, close it:
-       1. Call `transitionJiraIssue` with the Done transition (transition id `161` for the ONE project; cloudId `fd67803a-3849-4a2f-8626-b6e0b198a754`).
-       2. Call `editJiraIssue` to set `resolution: { name: "Done" }` — **separate call required**; the Done transition has no field screen.
+     - If a ticket was identified, close it by transitioning it to the project's done/closed status. Query the ticket's available transitions to find the right one rather than assuming an id. If the done transition has no field screen, set the resolution in a separate edit call afterwards.
      - Report the merge (and ticket closure if applicable) to the user.
      - Stop the loop (omit the `ScheduleWakeup` call).
 
 3. **Do not start a second loop** on subsequent pushes to the same branch — one loop per PR is enough.
+
+(Project-specific ticket-key patterns, transition ids, and tracker coordinates — e.g. Jira cloudId — belong in project memory/skills, not here.)
 
 ## Prohibited and Restricted Operations
 
