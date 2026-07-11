@@ -6,7 +6,6 @@
       "Bash(tail:*)",
       "Bash(grep:*)",
       "Bash(gh pr:*)",
-      "Bash(bd list:*)",
       "WebSearch"
     ]
   },

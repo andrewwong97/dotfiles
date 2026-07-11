@@ -27,7 +27,6 @@
       "pwd": "allow",
       "cat": "allow",
       "mkdir *": "allow",
-      "bd *": "allow",
       "printenv": "deny",
       "rm *": "deny"
     },
@@ -36,7 +35,7 @@
     "doom_loop": "ask",
     "external_directory": "allow"
   },
-  "plugin": ["opencode-beads", "@slkiser/opencode-quota"],
+  "plugin": ["@slkiser/opencode-quota"],
   "experimental": {
     "quotaToast": {
       // Disable toasts (pop-ups after every assistant message).

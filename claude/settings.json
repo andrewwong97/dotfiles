@@ -10,7 +10,6 @@
       "Bash(git diff *)",
       "Bash(git show *)",
       "Bash(rg *)",
-      "Bash(bd *)",
       "Bash(ls *)",
       "Bash(wc *)",
       "Bash(mkdir *)",
@@ -21,22 +20,17 @@
       "Bash(* --help *)",
       "Read(~/.claude/*)",
       "Edit(~/.claude/*)",
-      "Read(~/.beads/*)",
-      "Write(~/.beads/*)",
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": ["Bash(rm *)", "Bash(printenv *)"],
     "defaultMode": "acceptEdits",
-    "additionalDirectories": ["~/.claude", "~/.beads", "/tmp/claude"]
+    "additionalDirectories": ["~/.claude", "/tmp/claude"]
   },
   "sandbox": {
     "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "network": {
-      "allowUnixSockets": [".beads/bd.sock"]
-    }
+    "autoAllowBashIfSandboxed": true
   },
   "model": "opus",
   "hooks": {
@@ -121,7 +115,6 @@
     ]
   },
   "enabledPlugins": {
-    "beads@beads-marketplace": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true
   },

@@ -38,8 +38,9 @@ The following applies to every push — whether it is the first push on a new br
 3. Stage specific files (never `git add -A` blindly).
 4. Commit with a clear message.
 5. **Before pushing**, run the `code-reviewer` agent (via the Agent tool with `subagent_type: "code-reviewer"`) against all files staged in the commit. All Critical issues surfaced by the review must be resolved before pushing. Warnings should be addressed where practical.
-6. Push with `-u` to set upstream: `git push -u origin <branch>`. See **Push Cadence** — push promptly on the *first* push, but hold off on subsequent pushes until you've consulted the user.
-7. **After every push, surface the PR link in your reply** (see **PR Creation**) — even when no other summary is warranted.
+6. **Squash unpushed commits** (see **Local Squash**). Before pushing, consolidate the local commits that have **not yet been pushed** into a clean, logically-grouped set — typically one commit per logical change, fix-ups folded into the commit they fix. Only ever reshape *unpushed* commits; a commit already on the remote is frozen.
+7. Push with `-u` to set upstream: `git push -u origin <branch>`. See **Push Cadence** — push promptly on the *first* push, but hold off on subsequent pushes until you've consulted the user.
+8. **After every push, surface the PR link in your reply** (see **PR Creation**) — even when no other summary is warranted.
 
 ## Push Cadence
 
@@ -47,7 +48,26 @@ The **first** push on a new branch should happen promptly: it triggers CI/CD and
 
 **After that, do not eagerly push every commit.** Let commits accumulate locally and **consult the user before each subsequent push.** This leaves a window to consolidate similar or fix-up commits — e.g. three iterations on the same file that should be one commit — before they reach the remote.
 
-The AI must never rewrite history itself (see Prohibited Operations), so any squash/rebase in that window is **performed by the user**: the AI's job is to hold off pushing, point out which commits could be squashed, and wait for direction. Consolidating *local, unpushed* commits is what keeps this safe — it needs no force-push. Once commits are pushed, squashing them would require forbidden history rewriting, which is exactly why the consolidation must happen **before** the next push.
+The AI **squashes the unpushed commits itself** before pushing (see **Local Squash**) — this is safe because nothing has been shared yet, so it needs no force-push. The consolidation must happen **before** the next push: once commits are pushed, squashing them would require forbidden history rewriting. So the cadence is: let commits accumulate locally, consult the user before each subsequent push, then squash the still-unpushed commits into a clean set as part of that push.
+
+## Local Squash
+
+Before a push, collapse the **unpushed** local commits into a clean, logically-grouped set so the remote history reads as intentional changes, not a trail of iterations and fix-ups.
+
+**The boundary is absolute: only commits that have never been pushed may be reshaped.** A commit that exists on the remote (reachable from the upstream tracking branch) is frozen forever — see Prohibited Operations.
+
+1. **Find the unpushed range.** `git log --oneline @{u}..HEAD` (or `origin/<branch>..HEAD` if no upstream is set yet). Everything listed is unpushed and fair game; everything below `@{u}` is already pushed and off-limits.
+2. **Decide the target shape.** Usually one commit for the whole branch on the first push; on later pushes, fold each new fix-up into the new commit it belongs with. Keep genuinely distinct logical changes as separate commits.
+3. **Squash with a soft reset (no rebase — interactive rebase isn't available here anyway).** Reset to the boundary, then re-commit:
+   ```bash
+   git reset --soft @{u}        # first push with no upstream: use the merge-base, e.g. $(git merge-base HEAD origin/<primary>)
+   git commit -m "<clear message>"   # or several commits via staged groups, if keeping logical splits
+   ```
+   This moves only the branch pointer + index; the working tree is untouched, and no pushed commit changes SHA.
+4. **Never squash across a base-branch merge.** If the unpushed range includes a `git merge origin/<primary>` (a sync — see Merge Conflicts and Branch Sync), leave that merge commit intact; squash only the work commits around it, or just push without squashing. Don't flatten an integration merge into your own commit.
+5. **Re-run the pre-push gate** (tests / prek / code-review) after squashing, since the staged result is a new commit.
+
+If the only commits that *should* be combined are already pushed, do **not** squash them — that needs a force-push (forbidden). Leave them as-is or ask the user.
 
 ## PR Creation
 
@@ -122,15 +142,20 @@ To sync:
 
 ### Strictly Forbidden — No Exceptions
 
-AI agents must **never** rebase, amend, squash, or otherwise rewrite git history — whether on local or remote branches. Explicit user approval does not override these prohibitions. This includes:
+**The invariant: a commit that has been pushed to a remote is frozen forever. Its SHA must never change. Force-pushing is never allowed.** AI agents must **never** rewrite *pushed* history, and explicit user approval does not override this. Forbidden, no exceptions:
 
-- `git rebase` (interactive or otherwise), on any branch at any state
-- `git commit --amend` on any commit that has already been pushed
-- `git reset` (any mode: `--hard`, `--soft`, `--mixed`) to remove or undo commits
-- `git push --force` or `git push --force-with-lease`
-- Any other operation that changes the SHA of an existing commit
+- `git push --force` or `git push --force-with-lease` — never, under any circumstances
+- `git rebase` (interactive or otherwise) that includes any **already-pushed** commit
+- `git commit --amend` on a commit that has already been pushed
+- `git reset` that removes, undoes, or reshapes any **already-pushed** commit
+- Rewriting commits on a shared branch (`master`/`main`/`develop`, or any branch others may have pulled)
+- Any other operation that changes the SHA of a commit that exists on the remote
 
-If a situation seems to call for history rewriting, stop, explain the situation to the user, and ask them to perform the operation manually.
+If a situation seems to call for rewriting **pushed** history, stop, explain, and ask the user to perform it manually.
+
+### Allowed — Reshaping Unpushed Commits
+
+Consolidating commits that have **never been pushed** is explicitly allowed and is part of the normal flow (see **Local Squash**): `git reset --soft` to the upstream/merge-base then re-commit, or `git commit --amend` on an unpushed commit. These touch only local, unshared history and need no force-push. The test is simple — `git log @{u}..HEAD` lists what is reshapeable; anything below `@{u}` is not.
 
 ### Requires Explicit User Approval
 
